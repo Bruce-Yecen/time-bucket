@@ -1,0 +1,758 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>家庭设置 — 时光之桶</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #FFF8E7 0%, #FFE8D6 50%, #FFD6BA 100%);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+    padding: 0 20px 40px;
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    padding: 24px 0 20px;
+    max-width: 600px;
+    margin: 0 auto;
+  }
+  .back-btn {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255,255,255,0.7);
+    backdrop-filter: blur(10px);
+    font-size: 20px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  }
+  .back-btn:hover { transform: scale(1.1); }
+  .header h1 {
+    flex: 1;
+    text-align: center;
+    font-size: 1.5rem;
+    color: #5D4037;
+    font-weight: 700;
+    letter-spacing: 2px;
+    margin-right: 40px;
+  }
+
+  /* === Lifespan Setting Card === */
+  .lifespan-card {
+    max-width: 600px;
+    margin: 0 auto 20px;
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 20px 24px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .lifespan-card .card-icon {
+    font-size: 32px;
+    flex-shrink: 0;
+  }
+  .lifespan-card .card-content {
+    flex: 1;
+  }
+  .lifespan-card .card-title {
+    font-size: 0.9rem;
+    color: #8D6E63;
+    font-weight: 500;
+    margin-bottom: 6px;
+  }
+  .lifespan-card .lifespan-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .lifespan-card input[type="number"] {
+    width: 80px;
+    padding: 8px 12px;
+    border: 1.5px solid rgba(0,0,0,0.1);
+    border-radius: 12px;
+    font-size: 1.1rem;
+    color: #5D4037;
+    background: rgba(255,255,255,0.6);
+    outline: none;
+    text-align: center;
+    font-weight: 700;
+    font-family: inherit;
+    -webkit-appearance: none;
+  }
+  .lifespan-card input[type="number"]:focus {
+    border-color: #FF8A65;
+    box-shadow: 0 0 0 3px rgba(255, 138, 101, 0.15);
+  }
+  .lifespan-card .unit {
+    font-size: 0.95rem;
+    color: #8D6E63;
+    font-weight: 500;
+  }
+
+  /* === Member Cards === */
+  .cards-container {
+    max-width: 600px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+  }
+
+  .member-card {
+    background: rgba(255, 255, 255, 0.75);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    position: relative;
+  }
+
+  .card-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+  }
+  .card-label {
+    font-size: 0.85rem;
+    color: #A1887F;
+    font-weight: 500;
+    letter-spacing: 1px;
+  }
+  .card-color-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 6px;
+    vertical-align: middle;
+  }
+  .remove-btn {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(0,0,0,0.1);
+    background: rgba(255,255,255,0.6);
+    color: #B0A090;
+    font-size: 16px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    line-height: 1;
+    padding: 0;
+  }
+  .remove-btn:hover {
+    border-color: #E53935;
+    color: #E53935;
+    background: rgba(229, 57, 53, 0.08);
+  }
+
+  .emoji-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 18px;
+  }
+  .emoji-option {
+    width: 46px;
+    height: 46px;
+    border-radius: 12px;
+    border: 2px solid transparent;
+    background: rgba(255,255,255,0.5);
+    font-size: 26px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+  .emoji-option:hover {
+    transform: scale(1.15);
+    background: rgba(255,255,255,0.9);
+  }
+  .emoji-option.selected {
+    border-color: #FF8A65;
+    background: rgba(255, 138, 101, 0.15);
+    transform: scale(1.15);
+    box-shadow: 0 2px 10px rgba(255, 138, 101, 0.3);
+  }
+
+  /* === Color Picker === */
+  .color-picker {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  .color-option {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .color-option:hover {
+    transform: scale(1.15);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.15);
+  }
+  .color-option.selected {
+    border-color: #5D4037;
+    transform: scale(1.2);
+    box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+  }
+  .color-option.selected::after {
+    content: '✓';
+    color: white;
+    font-size: 16px;
+    font-weight: 700;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.3);
+  }
+  .color-label {
+    font-size: 0.75rem;
+    color: #8D6E63;
+    text-align: center;
+    margin-top: -4px;
+    margin-bottom: 4px;
+  }
+
+  .form-group {
+    margin-bottom: 14px;
+  }
+  .form-group label {
+    display: block;
+    font-size: 0.85rem;
+    color: #8D6E63;
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+  .form-group input,
+  .form-group select {
+    width: 100%;
+    padding: 10px 14px;
+    border: 1.5px solid rgba(0,0,0,0.1);
+    border-radius: 12px;
+    font-size: 1rem;
+    color: #5D4037;
+    background: rgba(255,255,255,0.6);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    font-family: inherit;
+    -webkit-appearance: none;
+  }
+  .form-group input:focus,
+  .form-group select:focus {
+    border-color: #FF8A65;
+    box-shadow: 0 0 0 3px rgba(255, 138, 101, 0.15);
+  }
+  .form-row {
+    display: flex;
+    gap: 12px;
+  }
+  .form-row .form-group {
+    flex: 1;
+  }
+
+  /* === Add Member Button === */
+  .add-member-btn {
+    max-width: 600px;
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 14px;
+    border: 2px dashed rgba(255, 138, 101, 0.4);
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.35);
+    color: #FF8A65;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+  .add-member-btn:hover {
+    background: rgba(255, 255, 255, 0.6);
+    border-color: #FF8A65;
+    box-shadow: 0 2px 12px rgba(255, 138, 101, 0.15);
+  }
+  .add-member-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+    border-color: rgba(0,0,0,0.1);
+    color: #B0A090;
+  }
+  .add-member-btn .plus-icon {
+    font-size: 1.3rem;
+    font-weight: 400;
+  }
+
+  .save-btn {
+    display: block;
+    width: 100%;
+    max-width: 600px;
+    margin: 30px auto 0;
+    padding: 16px;
+    border: none;
+    border-radius: 16px;
+    background: linear-gradient(135deg, #FF8A65 0%, #FF7043 100%);
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 600;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 16px rgba(255, 112, 67, 0.3);
+    font-family: inherit;
+  }
+  .save-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 24px rgba(255, 112, 67, 0.4);
+  }
+  .save-btn:active {
+    transform: translateY(0);
+  }
+
+  .toast {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-100px);
+    background: rgba(76, 175, 80, 0.9);
+    color: white;
+    padding: 12px 24px;
+    border-radius: 12px;
+    font-size: 0.95rem;
+    font-weight: 500;
+    z-index: 1000;
+    transition: transform 0.4s cubic-bezier(0.22, 1, 0.36, 1);
+    backdrop-filter: blur(10px);
+  }
+  .toast.show {
+    transform: translateX(-50%) translateY(0);
+  }
+
+  /* === Delete Confirmation Overlay === */
+  .confirm-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.35);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    opacity: 0;
+    transition: opacity 0.25s;
+    pointer-events: none;
+  }
+  .confirm-overlay.show {
+    opacity: 1;
+    pointer-events: all;
+  }
+  .confirm-box {
+    background: white;
+    border-radius: 20px;
+    padding: 28px 32px;
+    text-align: center;
+    max-width: 320px;
+    box-shadow: 0 12px 40px rgba(0,0,0,0.15);
+  }
+  .confirm-box p {
+    font-size: 1rem;
+    color: #5D4037;
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+  .confirm-box .btn-row {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+  }
+  .confirm-box .btn-cancel {
+    padding: 10px 24px;
+    border: 1.5px solid rgba(0,0,0,0.12);
+    border-radius: 12px;
+    background: white;
+    color: #8D6E63;
+    font-size: 0.95rem;
+    cursor: pointer;
+    font-family: inherit;
+  }
+  .confirm-box .btn-confirm {
+    padding: 10px 24px;
+    border: none;
+    border-radius: 12px;
+    background: #E53935;
+    color: white;
+    font-size: 0.95rem;
+    cursor: pointer;
+    font-family: inherit;
+  }
+
+  @media (max-width: 480px) {
+    .member-card { padding: 18px; }
+    .emoji-option { width: 40px; height: 40px; font-size: 22px; }
+    .header h1 { font-size: 1.3rem; }
+    .lifespan-card { padding: 16px 18px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <button class="back-btn" onclick="window.location.href='index.html'" title="返回">←</button>
+  <h1>家庭设置</h1>
+</div>
+
+<!-- Lifespan Setting -->
+<div class="lifespan-card">
+  <div class="card-icon">⏳</div>
+  <div class="card-content">
+    <div class="card-title">默认寿命设定</div>
+    <div class="lifespan-row">
+      <input type="number" id="lifespanInput" min="1" max="150" value="100">
+      <span class="unit">岁</span>
+    </div>
+  </div>
+</div>
+
+<div class="cards-container" id="cardsContainer"></div>
+
+<!-- Add Member Button -->
+<button class="add-member-btn" id="addMemberBtn" onclick="addMember()">
+  <span class="plus-icon">＋</span> 添加成员
+</button>
+
+<button class="save-btn" id="saveBtn" onclick="saveData()">保存设置</button>
+
+<!-- Delete Confirmation -->
+<div class="confirm-overlay" id="confirmOverlay">
+  <div class="confirm-box">
+    <p id="confirmText">确定要删除这位成员吗？</p>
+    <div class="btn-row">
+      <button class="btn-cancel" onclick="cancelRemove()">取消</button>
+      <button class="btn-confirm" onclick="confirmRemove()">删除</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast">设置已保存</div>
+
+<script>
+(function() {
+  var STORAGE_KEY = 'familyTimeData';
+  var MAX_MEMBERS = 5;
+  var pendingRemoveIndex = -1;
+
+  // Water colors (7 options)
+  var WATER_COLORS = {
+    'blue':   { color: '#5BA3E6', name: '蓝色' },
+    'pink':   { color: '#F2A0B8', name: '粉色' },
+    'yellow': { color: '#FFD966', name: '黄色' },
+    'orange': { color: '#FFB74D', name: '橘色' },
+    'red':    { color: '#EF5350', name: '红色' },
+    'green':  { color: '#81C784', name: '绿色' },
+    'purple': { color: '#CE93D8', name: '紫色' }
+  };
+  var WATER_KEYS = Object.keys(WATER_COLORS);
+  var DEFAULT_COLORS = ['blue', 'pink', 'yellow', 'green', 'purple'];
+
+  // Chinese-style emojis with light skin tone 🏻
+  var EMOJI_OPTIONS = [
+    '👨🏻', '👩🏻', '👧🏻', '👦🏻',
+    '👴🏻', '👵🏻', '👶🏻', '🧒🏻',
+    '🧑🏻', '👨🏻‍🦱', '👩🏻‍🦰', '👨🏻‍🦳',
+    '👩🏻‍🦱', '👱🏻‍♂️', '👱🏻‍♀️', '🧔🏻',
+    '👨🏻‍🦳', '👩🏻‍🦳'
+  ];
+
+  var DEFAULT_EMOJIS = ['👨🏻', '👩🏻', '👧🏻', '🧑🏻', '👶🏻'];
+  var DEFAULT_NAMES = ['爸爸', '妈妈', '孩子', '成员4', '成员5'];
+
+  var DEFAULT_DATA = {
+    members: [
+      { name: '爸爸', birthYear: 1985, birthMonth: 6, emoji: '👨🏻', color: 'blue' },
+      { name: '妈妈', birthYear: 1988, birthMonth: 3, emoji: '👩🏻', color: 'pink' },
+      { name: '宝贝', birthYear: 2020, birthMonth: 9, emoji: '👧🏻', color: 'yellow' }
+    ],
+    lifespan: 100
+  };
+
+  function loadData() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        var data = JSON.parse(raw);
+        if (data && data.members && data.members.length > 0) return data;
+      }
+    } catch(e) {}
+    return JSON.parse(JSON.stringify(DEFAULT_DATA));
+  }
+
+  function generateYearOptions(selectedYear) {
+    var currentYear = new Date().getFullYear();
+    var html = '<option value="">选择年份</option>';
+    for (var y = currentYear; y >= 1930; y--) {
+      html += '<option value="' + y + '"' + (y === selectedYear ? ' selected' : '') + '>' + y + '年</option>';
+    }
+    return html;
+  }
+
+  function generateMonthOptions(selectedMonth) {
+    var html = '<option value="">选择月份</option>';
+    for (var m = 1; m <= 12; m++) {
+      html += '<option value="' + m + '"' + (m === selectedMonth ? ' selected' : '') + '>' + m + '月</option>';
+    }
+    return html;
+  }
+
+  function render() {
+    var data = loadData();
+    var container = document.getElementById('cardsContainer');
+    container.innerHTML = '';
+
+    // Lifespan
+    var lifespanInput = document.getElementById('lifespanInput');
+    lifespanInput.value = data.lifespan || 100;
+
+    data.members.forEach(function(member, index) {
+      var card = document.createElement('div');
+      card.className = 'member-card';
+      card.dataset.index = index;
+
+      var memberColorKey = member.color || DEFAULT_COLORS[index] || WATER_KEYS[0];
+      var memberColorInfo = WATER_COLORS[memberColorKey] || WATER_COLORS[WATER_KEYS[0]];
+
+      var colorDot = '<span class="card-color-dot" style="background:' + memberColorInfo.color + '"></span>';
+
+      var emojiPickerHtml = EMOJI_OPTIONS.map(function(emoji) {
+        return '<div class="emoji-option' + (emoji === member.emoji ? ' selected' : '') + '"'
+          + ' data-emoji="' + emoji + '"'
+          + ' onclick="selectEmoji(this, ' + index + ')">'
+          + emoji + '</div>';
+      }).join('');
+
+      var colorPickerHtml = WATER_KEYS.map(function(key) {
+        var info = WATER_COLORS[key];
+        return '<div class="color-option' + (key === memberColorKey ? ' selected' : '') + '"'
+          + ' data-color="' + key + '"'
+          + ' style="background:' + info.color + ';"'
+          + ' title="' + info.name + '"'
+          + ' onclick="selectColor(this, ' + index + ')"></div>';
+      }).join('');
+
+      card.innerHTML =
+        '<div class="card-header">' +
+          '<span class="card-label">' + colorDot + (index + 1) + '号成员 · ' + memberColorInfo.name + '</span>' +
+          (data.members.length > 1 ?
+            '<button class="remove-btn" onclick="requestRemove(' + index + ')" title="删除成员">✕</button>' : '') +
+        '</div>' +
+        '<div class="emoji-picker" id="emoji-picker-' + index + '">' + emojiPickerHtml + '</div>' +
+        '<div class="form-group">' +
+          '<label>水的颜色</label>' +
+          '<div class="color-picker" id="color-picker-' + index + '">' + colorPickerHtml + '</div>' +
+        '</div>' +
+        '<div class="form-group">' +
+          '<label>姓名</label>' +
+          '<input type="text" id="name-' + index + '" value="' + member.name + '" placeholder="请输入姓名" maxlength="10">' +
+        '</div>' +
+        '<div class="form-row">' +
+          '<div class="form-group">' +
+            '<label>出生年份</label>' +
+            '<select id="year-' + index + '">' + generateYearOptions(member.birthYear) + '</select>' +
+          '</div>' +
+          '<div class="form-group">' +
+            '<label>出生月份</label>' +
+            '<select id="month-' + index + '">' + generateMonthOptions(member.birthMonth) + '</select>' +
+          '</div>' +
+        '</div>';
+
+      container.appendChild(card);
+    });
+
+    updateAddButton();
+  }
+
+  function updateAddButton() {
+    var data = loadData();
+    var btn = document.getElementById('addMemberBtn');
+    if (data.members.length >= MAX_MEMBERS) {
+      btn.disabled = true;
+      btn.innerHTML = '<span class="plus-icon">＋</span> 最多 ' + MAX_MEMBERS + ' 位成员';
+    } else {
+      btn.disabled = false;
+      btn.innerHTML = '<span class="plus-icon">＋</span> 添加成员';
+    }
+  }
+
+  window.selectEmoji = function(el, index) {
+    var picker = document.getElementById('emoji-picker-' + index);
+    var options = picker.querySelectorAll('.emoji-option');
+    for (var i = 0; i < options.length; i++) {
+      options[i].classList.remove('selected');
+    }
+    el.classList.add('selected');
+  };
+
+  window.selectColor = function(el, index) {
+    var picker = document.getElementById('color-picker-' + index);
+    var options = picker.querySelectorAll('.color-option');
+    for (var i = 0; i < options.length; i++) {
+      options[i].classList.remove('selected');
+    }
+    el.classList.add('selected');
+
+    // Update the card header label and color dot
+    var card = el.closest('.member-card');
+    var colorKey = el.dataset.color;
+    var colorInfo = WATER_COLORS[colorKey];
+    var label = card.querySelector('.card-label');
+    if (label) {
+      var dot = label.querySelector('.card-color-dot');
+      if (dot) dot.style.background = colorInfo.color;
+      // Update text after dot
+      label.innerHTML = '<span class="card-color-dot" style="background:' + colorInfo.color + '"></span>' +
+        (index + 1) + '号成员 · ' + colorInfo.name +
+        (card.querySelector('.remove-btn') ? '' : '');
+      // Re-add remove button if needed
+      if (loadData().members.length > 1 && !label.parentElement.querySelector('.remove-btn')) {
+        // Already handled in render
+      }
+    }
+  };
+
+  window.addMember = function() {
+    var data = loadData();
+    if (data.members.length >= MAX_MEMBERS) return;
+
+    var idx = data.members.length;
+    data.members.push({
+      name: DEFAULT_NAMES[idx] || '成员' + (idx + 1),
+      birthYear: 1990,
+      birthMonth: 1,
+      emoji: DEFAULT_EMOJIS[idx] || '🧑🏻',
+      color: DEFAULT_COLORS[idx] || WATER_KEYS[idx % WATER_KEYS.length]
+    });
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    render();
+    // Scroll to the new card
+    var container = document.getElementById('cardsContainer');
+    var lastCard = container.lastElementChild;
+    if (lastCard) lastCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  };
+
+  window.requestRemove = function(index) {
+    pendingRemoveIndex = index;
+    var data = loadData();
+    document.getElementById('confirmText').textContent =
+      '确定要删除「' + data.members[index].name + '」吗？';
+    document.getElementById('confirmOverlay').classList.add('show');
+  };
+
+  window.cancelRemove = function() {
+    pendingRemoveIndex = -1;
+    document.getElementById('confirmOverlay').classList.remove('show');
+  };
+
+  window.confirmRemove = function() {
+    if (pendingRemoveIndex < 0) return;
+    var data = loadData();
+    if (data.members.length <= 1) return;
+    data.members.splice(pendingRemoveIndex, 1);
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    pendingRemoveIndex = -1;
+    document.getElementById('confirmOverlay').classList.remove('show');
+    render();
+  };
+
+  window.saveData = function() {
+    var data = loadData();
+    var valid = true;
+
+    // Read lifespan
+    var lifespanVal = parseInt(document.getElementById('lifespanInput').value);
+    if (!lifespanVal || lifespanVal < 1 || lifespanVal > 150) {
+      document.getElementById('lifespanInput').style.borderColor = '#E53935';
+      valid = false;
+    } else {
+      document.getElementById('lifespanInput').style.borderColor = '';
+      data.lifespan = lifespanVal;
+    }
+
+    data.members.forEach(function(member, index) {
+      var nameInput = document.getElementById('name-' + index);
+      var yearSelect = document.getElementById('year-' + index);
+      var monthSelect = document.getElementById('month-' + index);
+      var emojiSelected = document.querySelector('#emoji-picker-' + index + ' .emoji-option.selected');
+      var colorSelected = document.querySelector('#color-picker-' + index + ' .color-option.selected');
+
+      var name = nameInput ? nameInput.value.trim() : '';
+      var birthYear = yearSelect ? parseInt(yearSelect.value) : 0;
+      var birthMonth = monthSelect ? parseInt(monthSelect.value) : 0;
+      var emoji = emojiSelected ? emojiSelected.dataset.emoji : member.emoji;
+      var color = colorSelected ? colorSelected.dataset.color : (member.color || DEFAULT_COLORS[index] || WATER_KEYS[0]);
+
+      if (nameInput && !name) { nameInput.style.borderColor = '#E53935'; valid = false; }
+      else if (nameInput) { nameInput.style.borderColor = ''; }
+      if (yearSelect && !birthYear) { yearSelect.style.borderColor = '#E53935'; valid = false; }
+      else if (yearSelect) { yearSelect.style.borderColor = ''; }
+      if (monthSelect && !birthMonth) { monthSelect.style.borderColor = '#E53935'; valid = false; }
+      else if (monthSelect) { monthSelect.style.borderColor = ''; }
+
+      member.name = name || member.name;
+      member.birthYear = birthYear || member.birthYear;
+      member.birthMonth = birthMonth || member.birthMonth;
+      member.emoji = emoji;
+      member.color = color;
+    });
+
+    if (!valid) {
+      showToast('请填写完整信息', true);
+      return;
+    }
+
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+    showToast('设置已保存 ✓');
+
+    setTimeout(function() {
+      window.location.href = 'index.html';
+    }, 1200);
+  };
+
+  function showToast(message, isError) {
+    var toast = document.getElementById('toast');
+    toast.textContent = message;
+    toast.style.background = isError ? 'rgba(229, 57, 53, 0.9)' : 'rgba(76, 175, 80, 0.9)';
+    toast.classList.add('show');
+    setTimeout(function() { toast.classList.remove('show'); }, 2500);
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
