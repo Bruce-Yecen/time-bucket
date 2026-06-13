@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>时光之桶 — 家庭剩余时间</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #FFF8E7 0%, #FFE8D6 50%, #FFD6BA 100%);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+    display: flex;
+    flex-direction: column;
+    overflow-x: hidden;
+  }
+
+  /* === Header === */
+  .header {
+    text-align: center;
+    padding: 32px 20px 8px;
+    flex-shrink: 0;
+  }
+  .header h1 {
+    font-size: 2rem;
+    color: #5D4037;
+    font-weight: 700;
+    letter-spacing: 4px;
+    margin-bottom: 4px;
+  }
+  .header p {
+    font-size: 0.95rem;
+    color: #8D6E63;
+    font-weight: 300;
+  }
+  .header .subtitle {
+    font-size: 0.85rem;
+    color: #BCAAA4;
+    margin-top: 2px;
+  }
+  .settings-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255,255,255,0.7);
+    backdrop-filter: blur(10px);
+    font-size: 22px;
+    cursor: pointer;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .settings-btn:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 16px rgba(0,0,0,0.15);
+  }
+
+  /* === Buckets Container (takes main space, centered within) === */
+  .buckets-area {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+  }
+  .buckets-container {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 50px;
+    padding: 0 30px;
+    flex-wrap: wrap;
+    max-width: 900px;
+    width: 100%;
+  }
+
+  /* === Bucket Card === */
+  .bucket-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    opacity: 0;
+    transform: translateY(30px);
+    animation: fadeInUp 0.8s ease forwards;
+  }
+  .bucket-card:nth-child(1) { animation-delay: 0.2s; }
+  .bucket-card:nth-child(2) { animation-delay: 0.5s; }
+  .bucket-card:nth-child(3) { animation-delay: 0.8s; }
+
+  @keyframes fadeInUp {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* === Days Label (above bucket) === */
+  .days-label {
+    font-size: 0.95rem;
+    font-weight: 600;
+    color: #5D4037;
+    margin-bottom: 4px;
+    text-align: center;
+    min-height: 1.4em;
+  }
+  .days-label .num {
+    font-size: 1.4rem;
+    color: #D84315;
+    font-weight: 700;
+  }
+
+  /* === Emoji Avatar === */
+  .avatar {
+    font-size: 48px;
+    margin-bottom: 6px;
+    animation: float 3s ease-in-out infinite;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.1));
+  }
+  .bucket-card:nth-child(2) .avatar { animation-delay: -1s; }
+  .bucket-card:nth-child(3) .avatar { animation-delay: -2s; }
+
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-6px); }
+  }
+
+  /* === Glass Bucket (same size for all) === */
+  .bucket-wrapper {
+    position: relative;
+    width: 150px;
+    height: 240px;
+    overflow: visible;
+  }
+
+  /* Bucket rim (top edge) */
+  .bucket-rim {
+    position: absolute;
+    top: -6px;
+    left: -4px;
+    right: -4px;
+    height: 14px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.6) 0%, rgba(255,255,255,0.25) 100%);
+    border-radius: 8px 8px 4px 4px;
+    border: 2px solid rgba(255, 255, 255, 0.5);
+    z-index: 6;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  }
+
+  .bucket {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    border: 3px solid rgba(255, 255, 255, 0.5);
+    border-radius: 12px 12px 30px 30px;
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(2px);
+    overflow: hidden;
+    box-shadow:
+      inset 0 0 20px rgba(255, 255, 255, 0.15),
+      0 8px 32px rgba(0, 0, 0, 0.08),
+      0 2px 8px rgba(0, 0, 0, 0.05);
+  }
+
+  /* Glass highlight reflection */
+  .bucket::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 8px;
+    width: 20px;
+    height: 100%;
+    background: linear-gradient(
+      90deg,
+      rgba(255, 255, 255, 0.35) 0%,
+      rgba(255, 255, 255, 0.1) 50%,
+      transparent 100%
+    );
+    border-radius: 10px;
+    z-index: 5;
+    pointer-events: none;
+  }
+  .bucket::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 12px;
+    width: 8px;
+    height: 60%;
+    background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.12) 100%);
+    border-radius: 4px;
+    z-index: 5;
+    pointer-events: none;
+  }
+
+  /* === Water Fill === */
+  .water {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: 0;
+    transition: height 2.5s cubic-bezier(0.22, 1, 0.36, 1);
+    border-radius: 0 0 27px 27px;
+  }
+  .water-fill {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    height: calc(100% - 20px);
+    border-radius: 0 0 27px 27px;
+  }
+  .water-blue .water-fill { background: linear-gradient(180deg, #5BA3E6 0%, #3A7BD5 100%); }
+  .water-pink .water-fill { background: linear-gradient(180deg, #F2A0B8 0%, #E88BA8 100%); }
+  .water-yellow .water-fill { background: linear-gradient(180deg, #FFD966 0%, #F5C542 100%); }
+  .water-orange .water-fill { background: linear-gradient(180deg, #FFB74D 0%, #FF9800 100%); }
+  .water-red .water-fill { background: linear-gradient(180deg, #EF5350 0%, #E53935 100%); }
+  .water-green .water-fill { background: linear-gradient(180deg, #81C784 0%, #66BB6A 100%); }
+  .water-purple .water-fill { background: linear-gradient(180deg, #CE93D8 0%, #BA68C8 100%); }
+
+  /* === Wave Animation === */
+  .wave {
+    position: absolute;
+    top: -18px;
+    left: 0;
+    width: 200%;
+    height: 30px;
+  }
+  .wave svg { width: 100%; height: 100%; }
+  .wave1 { animation: waveMove1 4s linear infinite; opacity: 0.6; }
+  .wave2 { top: -12px; animation: waveMove2 3s linear infinite; opacity: 0.3; }
+  @keyframes waveMove1 { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+  @keyframes waveMove2 { 0% { transform: translateX(-50%); } 100% { transform: translateX(0); } }
+
+  /* === Bubbles === */
+  .bubbles {
+    position: absolute;
+    bottom: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  .bubble {
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.3);
+    animation: bubbleRise linear infinite;
+  }
+  @keyframes bubbleRise {
+    0% { transform: translateY(0) scale(1); opacity: 0.6; }
+    50% { opacity: 0.3; }
+    100% { transform: translateY(-200px) scale(0.4); opacity: 0; }
+  }
+
+  /* === Glass Tube (transparent, bends down from bucket wall) === */
+  .glass-tube {
+    position: absolute;
+    right: -44px;
+    bottom: 8px;
+    width: 48px;
+    height: 58px;
+    z-index: 10;
+    overflow: visible;
+  }
+
+  /* === Drip zone (below tube outlet) === */
+  .drip-zone {
+    position: absolute;
+    right: -35px;
+    bottom: -48px;
+    width: 16px;
+    height: 60px;
+    z-index: 9;
+    overflow: visible;
+  }
+
+  .drop {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    width: 6px;
+    height: 8px;
+    border-radius: 50% 50% 50% 50% / 30% 30% 70% 70%;
+    opacity: 0;
+    animation: dropFall 3.5s ease-in infinite;
+  }
+  .drop:nth-child(2) {
+    animation-delay: 1.75s;
+  }
+
+  .water-blue .drop { background: #5BA3E6; }
+  .water-pink .drop { background: #F2A0B8; }
+  .water-yellow .drop { background: #FFD966; }
+  .water-orange .drop { background: #FFB74D; }
+  .water-red .drop { background: #EF5350; }
+  .water-green .drop { background: #81C784; }
+  .water-purple .drop { background: #CE93D8; }
+
+  @keyframes dropFall {
+    0%   { top: -4px;  opacity: 0;   transform: translateX(-50%) scale(0.1); }
+    5%   {             opacity: 0.8; transform: translateX(-50%) scale(0.4); }
+    15%  {             opacity: 1;   transform: translateX(-50%) scale(1); }
+    22%  {             opacity: 1;   transform: translateX(-50%) scale(1.15, 0.85); }
+    26%  { top: 0px;   opacity: 1;   transform: translateX(-50%) scale(0.6, 1.35); }
+    28%  { top: 2px;   opacity: 0.9; transform: translateX(-50%) scale(0.75, 1.15); }
+    32%  { top: 5px;   opacity: 0.7; transform: translateX(-50%) scale(0.65); }
+    78%  { top: 50px;  opacity: 0.15; transform: translateX(-50%) scale(0.5); }
+    83%  { top: 55px;  opacity: 0;   transform: translateX(-50%) scale(1.4, 0.3); }
+    100% { top: -4px;  opacity: 0;   transform: translateX(-50%) scale(0); }
+  }
+
+  /* Splash ripple at bottom */
+  .splash {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    width: 12px;
+    height: 3px;
+    border-radius: 50%;
+    opacity: 0;
+    animation: splashPulse 3.5s ease-out infinite;
+  }
+  .splash:nth-child(4) {
+    animation-delay: 1.75s;
+  }
+
+  .water-blue .splash { background: #5BA3E6; }
+  .water-pink .splash { background: #F2A0B8; }
+  .water-yellow .splash { background: #FFD966; }
+  .water-orange .splash { background: #FFB74D; }
+  .water-red .splash { background: #EF5350; }
+  .water-green .splash { background: #81C784; }
+  .water-purple .splash { background: #CE93D8; }
+
+  @keyframes splashPulse {
+    0%, 76% { transform: translateX(-50%) scale(0); opacity: 0; }
+    80% { transform: translateX(-50%) scale(1); opacity: 0.5; }
+    86% { transform: translateX(-50%) scale(1.8, 0.5); opacity: 0.25; }
+    93% { transform: translateX(-50%) scale(2.2, 0.2); opacity: 0; }
+    100% { opacity: 0; }
+  }
+
+  /* === Info Section === */
+  .info {
+    text-align: center;
+    margin-top: 8px;
+  }
+  .info .name {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #5D4037;
+    margin-bottom: 2px;
+  }
+  .info .age {
+    font-size: 0.82rem;
+    color: #8D6E63;
+    margin-bottom: 2px;
+  }
+  .info .remaining {
+    font-size: 0.95rem;
+    font-weight: 700;
+    color: #D84315;
+  }
+  .info .remaining span {
+    font-size: 1.2rem;
+  }
+
+  /* === Footer === */
+  .footer {
+    text-align: center;
+    padding: 16px 20px 28px;
+    color: #A1887F;
+    font-size: 0.88rem;
+    font-weight: 300;
+    letter-spacing: 1px;
+    flex-shrink: 0;
+  }
+  .footer .highlight {
+    color: #8D6E63;
+    font-weight: 500;
+  }
+
+  /* === Lapsed bucket === */
+  .bucket-card.lapsed .bucket {
+    border-color: rgba(200, 200, 200, 0.4);
+  }
+  .bucket-card.lapsed .info .remaining {
+    color: #B71C1C;
+  }
+  .empty-message {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 0.85rem;
+    color: #BCAAA4;
+    text-align: center;
+    z-index: 4;
+    width: 80%;
+    line-height: 1.4;
+  }
+
+  /* === Responsive === */
+  @media (max-width: 900px) {
+    .buckets-container {
+      gap: 30px;
+    }
+    .bucket-wrapper { width: 120px; height: 200px; }
+    .avatar { font-size: 40px; }
+    .header h1 { font-size: 1.7rem; }
+    .days-label .num { font-size: 1.2rem; }
+    .glass-tube { right: -38px; width: 42px; height: 50px; }
+    .drip-zone { right: -30px; }
+  }
+  @media (max-width: 768px) {
+    .buckets-container {
+      flex-direction: column;
+      align-items: center;
+      gap: 20px;
+    }
+    .bucket-wrapper { width: 140px; height: 220px; }
+    .avatar { font-size: 42px; }
+    .glass-tube { right: -44px; width: 48px; height: 58px; }
+    .drip-zone { right: -35px; }
+  }
+  @media (max-width: 480px) {
+    .bucket-wrapper { width: 120px; height: 200px; }
+    .avatar { font-size: 36px; }
+    .header h1 { font-size: 1.4rem; }
+    .header p { font-size: 0.8rem; }
+    .info .name { font-size: 0.95rem; }
+    .days-label .num { font-size: 1rem; }
+    .days-label { font-size: 0.8rem; }
+    .glass-tube { right: -38px; width: 42px; height: 50px; }
+    .drip-zone { right: -30px; }
+  }
+</style>
+</head>
+<body>
+
+<button class="settings-btn" onclick="window.location.href='settings.html'" title="设置">⚙️</button>
+
+<header class="header">
+  <h1>时光之桶</h1>
+  <p>每一滴水都珍贵，珍惜当下相伴的时光</p>
+  <p id="lifespanHint" class="subtitle"></p>
+</header>
+
+<div class="buckets-area">
+  <div class="buckets-container" id="bucketsContainer"></div>
+</div>
+
+<footer class="footer">
+  <span class="highlight">时间无法倒流</span>，但爱可以让每一刻都闪耀 ✨
+</footer>
+
+<script>
+(function() {
+  var STORAGE_KEY = 'familyTimeData';
+  var WATER_CLASSES = ['water-blue', 'water-pink', 'water-yellow', 'water-orange', 'water-red', 'water-green', 'water-purple'];
+  var WAVE_COLORS  = ['#5BA3E6', '#F2A0B8', '#FFD966', '#FFB74D', '#EF5350', '#81C784', '#CE93D8'];
+  var COLOR_MAP = {
+    'blue':   { cls: 'water-blue',   color: '#5BA3E6' },
+    'pink':   { cls: 'water-pink',   color: '#F2A0B8' },
+    'yellow': { cls: 'water-yellow', color: '#FFD966' },
+    'orange': { cls: 'water-orange', color: '#FFB74D' },
+    'red':    { cls: 'water-red',    color: '#EF5350' },
+    'green':  { cls: 'water-green',  color: '#81C784' },
+    'purple': { cls: 'water-purple', color: '#CE93D8' }
+  };
+  var BUCKET_HEIGHT = 240; // fixed bucket height for all
+
+  var DEFAULT_DATA = {
+    members: [
+      { name: '爸爸', birthYear: 1985, birthMonth: 6, emoji: '👨🏻', color: 'blue' },
+      { name: '妈妈', birthYear: 1988, birthMonth: 3, emoji: '👩🏻', color: 'pink' },
+      { name: '宝贝', birthYear: 2020, birthMonth: 9, emoji: '👧🏻', color: 'yellow' }
+    ],
+    lifespan: 100
+  };
+
+  function loadData() {
+    try {
+      var raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        var data = JSON.parse(raw);
+        if (data && data.members && data.members.length > 0) return data;
+      }
+    } catch(e) {}
+    return JSON.parse(JSON.stringify(DEFAULT_DATA));
+  }
+
+  function calcAgeDays(birthYear, birthMonth) {
+    var now = new Date();
+    var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    var birthDate = new Date(birthYear, birthMonth - 1);
+    return Math.floor((today - birthDate) / (24 * 60 * 60 * 1000));
+  }
+
+  function calcAgeYears(birthYear, birthMonth) {
+    return calcAgeDays(birthYear, birthMonth) / 365.25;
+  }
+
+  function createWaveSVG(color, amplitude, yOffset) {
+    return '<svg viewBox="0 0 800 30" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">' +
+      '<path d="M0,' + yOffset + ' Q100,' + (yOffset - amplitude) + ' 200,' + yOffset +
+      ' T400,' + yOffset + ' T600,' + yOffset + ' T800,' + yOffset +
+      ' L800,30 L0,30 Z" fill="' + color + '"/></svg>';
+  }
+
+  function createBubbles(count) {
+    var html = '';
+    for (var i = 0; i < count; i++) {
+      var size = 4 + Math.random() * 8;
+      var left = 10 + Math.random() * 80;
+      var delay = Math.random() * 5;
+      var duration = 3 + Math.random() * 4;
+      html += '<div class="bubble" style="width:' + size + 'px;height:' + size +
+        'px;left:' + left + '%;bottom:' + (Math.random()*40) +
+        '%;animation-delay:' + delay + 's;animation-duration:' + duration + 's;"></div>';
+    }
+    return html;
+  }
+
+  // Glass tube SVG - transparent tube bends downward from bucket wall
+  function createGlassTubeSVG(waterColor) {
+    return '<svg viewBox="0 0 48 58" xmlns="http://www.w3.org/2000/svg">' +
+      /* Horizontal tube section (from bucket wall outward) */
+      '<rect x="0" y="6" width="22" height="10" rx="5" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.55)" stroke-width="1.5"/>' +
+      /* Water inside horizontal tube */
+      '<rect x="2" y="8" width="18" height="6" rx="3" fill="' + waterColor + '" opacity="0.45"/>' +
+      /* Highlight on horizontal tube top */
+      '<rect x="3" y="7" width="16" height="2" rx="1" fill="rgba(255,255,255,0.6)"/>' +
+      /* Curved bend (quarter circle from horizontal to vertical) */
+      '<path d="M22,6 L22,6 Q32,6 32,16 L32,20" fill="none" stroke="rgba(255,255,255,0.55)" stroke-width="1.5" stroke-linecap="round"/>' +
+      /* Outer curve fill for glass body */
+      '<path d="M17,6 L22,6 Q34,6 34,16 L34,20 L34,20 Q34,8 22,8 L17,8 Z" fill="rgba(255,255,255,0.12)"/>' +
+      /* Water inside the bend */
+      '<path d="M19,8 L22,8 Q31,8 31,16 L31,20 L29,20 L29,16 Q29,10 22,10 L19,10 Z" fill="' + waterColor + '" opacity="0.4"/>' +
+      /* Highlight on bend outer edge */
+      '<path d="M22,7 Q32,7 33,16" fill="none" stroke="rgba(255,255,255,0.5)" stroke-width="1" stroke-linecap="round"/>' +
+      /* Vertical tube section (going downward) */
+      '<rect x="26" y="18" width="10" height="36" rx="5" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.55)" stroke-width="1.5"/>' +
+      /* Water inside vertical tube */
+      '<rect x="28" y="20" width="6" height="32" rx="3" fill="' + waterColor + '" opacity="0.4"/>' +
+      /* Highlight on vertical tube left side */
+      '<rect x="27" y="20" width="2" height="30" rx="1" fill="rgba(255,255,255,0.55)"/>' +
+      /* Tube opening at bottom (slightly wider) */
+      '<ellipse cx="31" cy="54" rx="6" ry="2.5" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.5)" stroke-width="1"/>' +
+      /* Water droplet forming at opening */
+      '<ellipse cx="31" cy="54" rx="3" ry="1.5" fill="' + waterColor + '" opacity="0.5"/>' +
+    '</svg>';
+  }
+
+  function render() {
+    var data = loadData();
+    var container = document.getElementById('bucketsContainer');
+    container.innerHTML = '';
+
+    // Show lifespan hint if not 100
+    var hint = document.getElementById('lifespanHint');
+    if (hint) {
+      hint.textContent = data.lifespan !== 100 ? '（默认寿命设定：' + data.lifespan + '岁）' : '';
+    }
+
+    // Calculate all members' data
+    var membersData = data.members.map(function(member) {
+      var ageYears = calcAgeYears(member.birthYear, member.birthMonth);
+      var ageDays = calcAgeDays(member.birthYear, member.birthMonth);
+      var totalDays = data.lifespan * 365.25;
+      var remainingDays = Math.max(0, Math.floor(totalDays - ageDays));
+      var remaining = Math.max(0, data.lifespan - ageYears);
+      var percentage = Math.max(0, Math.min(1, remaining / data.lifespan));
+      var isLapsed = remaining <= 0;
+      return {
+        member: member,
+        ageYears: ageYears,
+        remainingDays: remainingDays,
+        remaining: remaining,
+        percentage: percentage,
+        isLapsed: isLapsed
+      };
+    });
+
+    // Find the minimum percentage (least water = oldest)
+    var minPercentage = 1;
+    membersData.forEach(function(m) {
+      if (m.percentage < minPercentage && !m.isLapsed) minPercentage = m.percentage;
+    });
+
+    // Calculate top offset for each card so water surfaces align
+    // Water surface from top of bucket = BUCKET_HEIGHT * (1 - percentage)
+    // offset = BUCKET_HEIGHT * (percentage - minPercentage)
+    // This pushes younger person's card DOWN so water surface aligns with oldest
+
+    membersData.forEach(function(md, index) {
+      var member = md.member;
+      // Read custom color from member data, fallback to index-based
+      var colorKey = member.color || Object.keys(COLOR_MAP)[index % Object.keys(COLOR_MAP).length];
+      var colorInfo = COLOR_MAP[colorKey] || COLOR_MAP['blue'];
+      var waterClass = colorInfo.cls;
+      var waveColor = colorInfo.color;
+      var waterFillPercent = md.isLapsed ? 0 : md.percentage * 100;
+      var topOffset = md.isLapsed ? 0 : Math.round(BUCKET_HEIGHT * (md.percentage - minPercentage));
+
+      var card = document.createElement('div');
+      card.className = 'bucket-card' + (md.isLapsed ? ' lapsed' : '');
+      card.style.marginTop = topOffset + 'px';
+
+      var daysLabelHTML = md.isLapsed ?
+        '<div class="days-label" style="color:#BCAAA4;">时光已尽</div>' :
+        '<div class="days-label">剩余 <span class="num" id="days-' + index + '">0</span> 天</div>';
+
+      card.innerHTML =
+        daysLabelHTML +
+        '<div class="avatar">' + member.emoji + '</div>' +
+        '<div class="bucket-wrapper">' +
+          '<div class="bucket-rim"></div>' +
+          '<div class="bucket">' +
+            (md.isLapsed ? '<div class="empty-message">时光已尽<br>愿回忆温暖</div>' :
+              '<div class="water ' + waterClass + '" id="water-' + index + '" style="height: 0%">' +
+                '<div class="wave wave1">' + createWaveSVG(waveColor, 8, 18) + '</div>' +
+                '<div class="wave wave2">' + createWaveSVG(waveColor, 5, 20) + '</div>' +
+                '<div class="water-fill"></div>' +
+                '<div class="bubbles">' + createBubbles(5) + '</div>' +
+              '</div>'
+            ) +
+          '</div>' +
+          /* Glass tube */
+          (md.isLapsed ? '' :
+            '<div class="glass-tube ' + waterClass + '">' + createGlassTubeSVG(waveColor) + '</div>' +
+            '<div class="drip-zone ' + waterClass + '">' +
+              '<div class="drop"></div>' +
+              '<div class="drop"></div>' +
+              '<div class="splash"></div>' +
+              '<div class="splash"></div>' +
+            '</div>'
+          ) +
+        '</div>' +
+        '<div class="info">' +
+          '<div class="name">' + member.name + '</div>' +
+          '<div class="age">' + md.ageYears.toFixed(1) + ' 岁</div>' +
+          '<div class="remaining">剩余 <span id="rem-' + index + '">0</span> 年</div>' +
+        '</div>';
+
+      container.appendChild(card);
+
+      // Animate water level and numbers after delay
+      if (!md.isLapsed) {
+        (function(idx, fillPct, remDays, remYears) {
+          setTimeout(function() {
+            var waterEl = document.getElementById('water-' + idx);
+            if (waterEl) waterEl.style.height = fillPct + '%';
+
+            var daysEl = document.getElementById('days-' + idx);
+            if (daysEl) {
+              var daysStart = performance.now();
+              function updateDays(now) {
+                var elapsed = now - daysStart;
+                var progress = Math.min(elapsed / 2000, 1);
+                var eased = 1 - Math.pow(1 - progress, 3);
+                daysEl.textContent = Math.round(eased * remDays).toLocaleString();
+                if (progress < 1) requestAnimationFrame(updateDays);
+              }
+              requestAnimationFrame(updateDays);
+            }
+
+            var remEl = document.getElementById('rem-' + idx);
+            if (remEl) {
+              var remStart = performance.now();
+              function updateRem(now) {
+                var elapsed = now - remStart;
+                var progress = Math.min(elapsed / 2000, 1);
+                var eased = 1 - Math.pow(1 - progress, 3);
+                remEl.textContent = (eased * remYears).toFixed(1);
+                if (progress < 1) requestAnimationFrame(updateRem);
+              }
+              requestAnimationFrame(updateRem);
+            }
+          }, 500 + idx * 300);
+        })(index, waterFillPercent, md.remainingDays, md.remaining);
+      }
+    });
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>
