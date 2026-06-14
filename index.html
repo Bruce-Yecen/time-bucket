@@ -168,7 +168,6 @@
     flex: 1;
     display: flex;
     align-items: center;
-    justify-content: center;
     width: 100%;
     position: relative;
     z-index: 1;
@@ -188,6 +187,7 @@
     padding: 0 20px 20px;
     flex-wrap: nowrap;
     min-width: min-content;
+    margin: 0 auto;
     position: relative;
   }
 
@@ -382,10 +382,10 @@
   /* === Glass Tube === */
   .glass-tube {
     position: absolute;
-    right: -44px;
+    right: var(--tube-right, -44px);
     bottom: 8px;
-    width: 48px;
-    height: 58px;
+    width: var(--tube-w, 48px);
+    height: var(--tube-h, 58px);
     z-index: 10;
     overflow: visible;
   }
@@ -393,7 +393,7 @@
   /* === Drip Zone === */
   .drip-zone {
     position: absolute;
-    right: -35px;
+    right: calc(var(--tube-right, -44px) + 9px);
     bottom: -48px;
     width: 16px;
     height: 60px;
@@ -557,8 +557,8 @@
       --font-title: 1.7rem;
       --font-days-num: 1.2rem;
     }
-    .glass-tube { right: -38px; width: 42px; height: 50px; }
-    .drip-zone { right: -30px; }
+    .glass-tube { --tube-right: -38px; --tube-w: 42px; --tube-h: 50px; }
+    .drip-zone { right: calc(var(--tube-right, -44px) + 8px); }
     #starfield { top: 90px; }
   }
   @media (max-width: 600px) {
@@ -575,10 +575,10 @@
     .header { padding: 20px 16px 6px; }
     .header h1 { letter-spacing: 2px; }
     .header p { font-size: 0.78rem; }
-    .glass-tube { right: -34px; width: 38px; height: 46px; }
-    .drip-zone { right: -26px; bottom: -40px; }
+    .glass-tube { --tube-right: -34px; --tube-w: 38px; --tube-h: 46px; }
+    .drip-zone { right: calc(var(--tube-right, -44px) + 8px); bottom: -40px; }
     .settings-btn { top: 12px; right: 12px; width: 38px; height: 38px; font-size: 18px; }
-    .lapsed-star-high { width: 28px; height: 28px; }
+    .lapsed-star-high { width: 28px; height: 28px; top: -95px; }
     #starfield { top: 75px; }
     .footer { padding: 10px 16px 20px; font-size: 0.78rem; }
     .info .remaining { font-size: 0.85rem; }
@@ -597,10 +597,10 @@
     }
     .header h1 { letter-spacing: 1px; }
     .header p { font-size: 0.72rem; }
-    .glass-tube { right: -30px; width: 34px; height: 40px; }
-    .drip-zone { right: -22px; bottom: -34px; width: 12px; height: 48px; }
+    .glass-tube { --tube-right: -30px; --tube-w: 34px; --tube-h: 40px; }
+    .drip-zone { right: calc(var(--tube-right, -44px) + 8px); bottom: -34px; width: 12px; height: 48px; }
     .drop { width: 5px; height: 6px; }
-    .lapsed-star-high { width: 22px; height: 22px; }
+    .lapsed-star-high { width: 22px; height: 22px; top: -78px; }
     #starfield { top: 65px; }
     .info .age { font-size: 0.72rem; }
     .info .remaining { font-size: 0.78rem; }
@@ -752,6 +752,73 @@
     field.innerHTML = html;
   }
 
+  // Dynamic bucket sizing: ensure all members fit on mobile
+  function adjustBucketSize(memberCount) {
+    var vw = window.innerWidth;
+    var root = document.documentElement;
+    // Restore CSS defaults first
+    root.style.removeProperty('--bucket-w');
+    root.style.removeProperty('--bucket-h');
+    root.style.removeProperty('--bucket-gap');
+    root.style.removeProperty('--avatar-size');
+    root.style.removeProperty('--font-days-num');
+    root.style.removeProperty('--font-days-label');
+    root.style.removeProperty('--font-name');
+    root.style.removeProperty('--tube-right');
+    root.style.removeProperty('--tube-w');
+    root.style.removeProperty('--tube-h');
+
+    // Read the CSS-variable values (which already account for media queries)
+    var cs = getComputedStyle(root);
+    var bw = parseFloat(cs.getPropertyValue('--bucket-w'));
+    var bh = parseFloat(cs.getPropertyValue('--bucket-h'));
+    var bg = parseFloat(cs.getPropertyValue('--bucket-gap'));
+    var as = parseFloat(cs.getPropertyValue('--avatar-size'));
+
+    // Glass tube dimensions at current breakpoint
+    var tubeRight = 44, tubeW = 48, tubeH = 58;
+    if (vw <= 400) { tubeRight = 30; tubeW = 34; tubeH = 40; }
+    else if (vw <= 600) { tubeRight = 34; tubeW = 38; tubeH = 46; }
+    else if (vw <= 900) { tubeRight = 38; tubeW = 42; tubeH = 50; }
+
+    // Padding on each side (20px from .buckets-container)
+    var sidePad = 40;
+    var available = vw - sidePad;
+    // Glass tube overhangs the bucket but the gap between cards absorbs part of it.
+    // Only count the overhang that exceeds the gap as "extra" required width.
+    var tubeExtra = Math.max(0, tubeRight - bg); // tube overhang beyond the gap
+    // Required: memberCount * bucketWidth + (memberCount-1) * gap + memberCount * tubeExtra
+    var required = memberCount * (bw + tubeExtra) + (memberCount - 1) * bg;
+
+    if (required <= available) return; // Everything fits, keep CSS defaults
+
+    // Need to scale down. Calculate scale factor with breathing room
+    var scale = (available - 10) / required;
+    scale = Math.max(scale, 0.42); // Absolute minimum: don't go below 42%
+
+    var newW = Math.round(bw * scale);
+    var newH = Math.round(bh * scale);
+    var newG = Math.max(4, Math.round(bg * scale));
+    var newA = Math.max(20, Math.round(as * scale));
+    var newFontNum = Math.max(0.72, parseFloat(cs.getPropertyValue('--font-days-num')) * scale);
+    var newFontLabel = Math.max(0.62, parseFloat(cs.getPropertyValue('--font-days-label')) * scale);
+    var newFontName = Math.max(0.7, parseFloat(cs.getPropertyValue('--font-name')) * scale);
+    var newTubeR = Math.max(18, Math.round(tubeRight * scale));
+    var newTubeW = Math.max(22, Math.round(tubeW * scale));
+    var newTubeH = Math.max(28, Math.round(tubeH * scale));
+
+    root.style.setProperty('--bucket-w', newW + 'px');
+    root.style.setProperty('--bucket-h', newH + 'px');
+    root.style.setProperty('--bucket-gap', newG + 'px');
+    root.style.setProperty('--avatar-size', newA + 'px');
+    root.style.setProperty('--font-days-num', newFontNum + 'rem');
+    root.style.setProperty('--font-days-label', newFontLabel + 'rem');
+    root.style.setProperty('--font-name', newFontName + 'rem');
+    root.style.setProperty('--tube-right', -newTubeR + 'px');
+    root.style.setProperty('--tube-w', newTubeW + 'px');
+    root.style.setProperty('--tube-h', newTubeH + 'px');
+  }
+
   function render() {
     var data = loadData();
     var container = document.getElementById('bucketsContainer');
@@ -762,6 +829,9 @@
     if (hint) {
       hint.textContent = data.lifespan !== 100 ? '（默认寿命设定：' + data.lifespan + '岁）' : '';
     }
+
+    // Dynamic bucket sizing based on member count & viewport width
+    adjustBucketSize(data.members.length);
 
     // Calculate members' data
     var membersData = data.members.map(function(member) {
